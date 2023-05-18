@@ -29,7 +29,6 @@ string file::to_json() {
 
     for (const auto &pair: properties) {
         os << '"' << pair.first << "\":\"" << pair.second << '"';
-        auto end = properties.end();
         if (properties.size() != i++)
             os << ',';
     }
@@ -38,7 +37,6 @@ string file::to_json() {
 }
 
 vector<string> file::list_directory(const string &_dir) {
-
     vector<string> files;
 
     string path = sync_path + "/sources/media/" + _dir;
@@ -61,9 +59,7 @@ vector<string> file::list_directory(const string &_dir) {
 
 
 media::media(const string &workdir) {
-
     auto callback = [](void *data, int argc, char **argv, char **colName) {
-
         auto f = file(argv[0], argv[1], argv[2]);
 
         ((vector<file> *) data)->push_back(f);
@@ -123,4 +119,4 @@ string media::download(const string &workdir, const string &hash) {
     return handler.str();
 }
 
-
+media::media() = default;

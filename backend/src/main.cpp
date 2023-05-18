@@ -10,14 +10,35 @@ using namespace std;
 
 using namespace cgicc;
 
-
 #include "files.hpp"
 #include "download.hpp"
-#include "md5.hpp"
 #include "notes.hpp"
 
 string sync_path;
 
+// Response headers {{{
+enum class headers {
+    JSON,
+    HTML,
+    BLOB
+};
+
+const char *response(const headers &type) {
+    switch (type) {
+        case headers::BLOB:
+            return "Content-type:application/octet-stream\r\n\r\n";
+        case headers::JSON:
+            return "Content-type:application/json\r\n\r\n";
+        case headers::HTML:
+            return "Content-type:text/html\r\n\r\n";
+        default:
+            return "Content-type:text/plain\r\n\r\n";
+    }
+}
+// }}}
+
+// Music GET {{{
+//
 void music() {
     string buffer = "[";
 
@@ -44,6 +65,26 @@ void music() {
     cout << buffer;
 }
 
+// }}}
+
+bool read_file(const string& key){
+    Cgicc cgi;
+    auto file = cgi.getFile("file");
+
+    string method = getenv("REQUEST_METHOD");
+
+
+    if (file != cgi.getFiles().end() && method == "POST") {
+        cout << HTTPContentHeader(file->getDataType());
+
+        auto handler = media(sync_path, file->getFilename());
+        handler.save(file->getData());
+
+        return true;
+    }
+    return false;
+}
+
 void file_handler() {
     Cgicc cgi;
     auto hash = cgi.getElement("hash");
@@ -58,17 +99,41 @@ void file_handler() {
 
 
     if (file != cgi.getFiles().end() && method == "POST") {
-
         cout << HTTPContentHeader(file->getDataType());
 
         auto handler = media(sync_path, file->getFilename());
-
         handler.save(file->getData());
 
         return;
     }
-
     cout << media(sync_path).to_json();
+}
+
+void notes_handler() {
+    Cgicc cgi;
+    auto hash = cgi.getElement("hash");
+    if (hash != cgi.getElements().end()) {
+        cout << notes::download(sync_path, hash->getValue());
+        return;
+    }
+    auto file = cgi.getElement("name");
+
+    char * tmp = getenv("REQUEST_METHOD");
+    string method = tmp == nullptr ? "GET" : tmp;
+
+
+    if (file != cgi.getElements().end() && method == "POST") {
+        cout << response(headers::JSON);
+
+        auto handler = notes(sync_path, file->getValue());
+        handler.save(cgi.getElement("value")->getValue());
+
+        return;
+    }
+
+    // if (read_file("notes")) return;
+
+    cout << notes(sync_path).to_json();
 }
 
 void curses() {
@@ -76,33 +141,14 @@ void curses() {
     cout << (ss == nullptr ? R"({"name": "Hello"})" : ss);
 }
 
-enum class headers {
-    JSON,
-    HTML,
-    BLOB
-};
-
-const char *response(const headers &type) {
-    switch (type) {
-        case headers::BLOB:
-            return "Content-type:application/octet-stream\r\n\r\n";
-        case headers::JSON:
-            return "Content-type:application/json\r\n\r\n";
-        case headers::HTML:
-            return "Content-type:text/html\r\n\r\n";
-        default:
-            return "Content-type:text/plain\r\n\r\n";
-    }
-}
-
-
+// Entry Point {{{
 int main() {
     char *root = getenv("DOCUMENT_ROOT");
     sync_path = root == nullptr ? "/home/rc-regalado/git/Sync" : root;
 
 
     char *c_uri = getenv("REQUEST_URI");
-    string uri = c_uri == nullptr ? "test" : c_uri;
+    string uri = c_uri == nullptr ? "/notes" : c_uri;
 
     bool hash = regex_match(uri, regex("\\/file(\\?hash=(.)+)?"));
 
@@ -130,25 +176,7 @@ int main() {
         auto *downloader = new download(name->getValue(), url->getValue(), hide);
         downloader->run();
     } else if (uri == "/notes") {
-        Cgicc cgi;
-        auto fi = cgi.getElement("name");
-
-        if (fi == cgi.getElements().end()) {
-            cout << "{\"result\": \"" << **fi << "\"}";
-            return 1;
-        }
-
-        notes note(**fi);
-
-        fi = cgi.getElement("value");
-        if (fi == cgi.getElements().end()) {
-            cout << "{\"result\": \"No se especificó el contenido del archivo.\"}";
-            return 1;
-        }
-
-        note.save(**fi);
-
-        cout << "{\"result\":\"Archivo guardado.\"}";
+        notes_handler();
     } else {
         cout << response(headers::HTML);
 
@@ -163,3 +191,4 @@ int main() {
 
     return 0;
 }
+// }}}

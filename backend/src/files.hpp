@@ -34,12 +34,14 @@ public:
 };
 
 class media : public file {
+protected:
     vector<file> _data;
 
     string workdir;
     string name;
 
 public:
+    media();
     explicit media(const string& workdir);
     media(string  workdir, string  name);
 
