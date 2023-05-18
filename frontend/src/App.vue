@@ -20,7 +20,6 @@ export default {
   mounted() {
     this.data();
     this.readCurses();
-    this.requestMusic();
   },
   methods: {
     ...mapActions([types.data, types.readCurses, types.requestMusic]),

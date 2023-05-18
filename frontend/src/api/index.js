@@ -45,11 +45,11 @@ async function upload(data, onload) {
   }
 }
 
-async function requestFile(file) {
+async function requestFile(hash) {
   try {
     return await axios.get("/file", {
       params: {
-        hash: file.hash,
+        hash,
       },
       responseType: "blob",
     });

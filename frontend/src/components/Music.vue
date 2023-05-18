@@ -22,6 +22,7 @@
 
 <script>
 import { mapState } from "vuex";
+import { requestMusic } from "@/api";
 
 export default {
   name: "MusicView",
@@ -36,6 +37,9 @@ export default {
       mime: "",
     },
   }),
+  mounted() {
+    requestMusic()
+  },
   methods: {
     onEnd() {
       if (this.index > this.songs.length) this.index = 0;
