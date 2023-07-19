@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <unistd.h> // For read
 #include <sstream>
+#include <fstream>
+#include <format>
 
 int main() {
   // Create a socket (IPv4, TCP)
@@ -29,14 +31,12 @@ int main() {
     exit(EXIT_FAILURE);
   }
 
-  // Start listening. Hold at most 10 connections in the queue
   if (listen(sockfd, 10) < 0) {
     std::cout << "Failed to listen on socket. errno: " << errno << std::endl;
     exit(EXIT_FAILURE);
   }
 
   std::cout << "Listening -- " << std::endl;
-  // Grab a connection from the queue
   auto addrlen = sizeof(sockaddr);
   int connection =
       accept(sockfd, (struct sockaddr *)&sockaddr, (socklen_t *)&addrlen);
@@ -86,10 +86,25 @@ int main() {
   }
 
   // Send a message to the connection
-  const char *response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
-  send(connection, response, strlen(response), 0);
+  std::string response = "";
+  std::ifstream file("index.html");
+
+  if(file.is_open()){
+    std::cout << "Opened!" << std::endl;
+    while (!file.eof()){
+      std::getline(file, line);
+      response.append(line + '\n');
+    }
+  }
+
+  response = std::format("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n {}", response.length(), response.c_str());
+  send(connection, response.c_str(), response.length(), 0);
+  
 
   // Close the connections
+  shutdown(connection, SHUT_WR);
+  shutdown(sockfd, SHUT_WR);
+
   close(connection);
   close(sockfd);
 }

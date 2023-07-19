@@ -1,3 +1,4 @@
+#include "socket/handler.hpp"
 #include <iostream>
 #include <memory>
 #include <string>
@@ -142,7 +143,14 @@ void curses() {
 }
 
 // Entry Point {{{
-int main() {
+int main(){
+    handler server;
+    if ( server.is_active() ){
+        cout << "Listening --- " << endl;
+    }
+}
+
+int main_bakup() {
     char *root = getenv("DOCUMENT_ROOT");
     sync_path = root == nullptr ? "/home/rc-regalado/git/Sync" : root;
 
