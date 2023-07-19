@@ -7,18 +7,19 @@
 #include <string>
 #include <sys/socket.h> // For socket functions
 #include <sys/types.h>
+#include <thread>
 #include <unistd.h> // For read
 
 #include "exceptions.hpp"
-#include "handler.hpp"
+#include "socket.hpp"
+
 bool strcontains(const std::string &str, const char *substr) {
   return str.find(substr) != std::string::npos;
 }
 
-handler::handler() {
+s_socket::s_socket() {
   try {
     start();
-    send_html("index.html");
     alive = true;
   } catch (socket_exception se) {
     throw se;
@@ -26,38 +27,72 @@ handler::handler() {
   }
 }
 
-void handler::start() {
+void s_socket::start() {
   // Create a socket (IPv4, TCP)
   server = socket(AF_INET, SOCK_STREAM, 0);
   if (server == -1)
     throw socket_exception("Failed to create socket.");
 
-  sockaddr_in sockaddr;
   sockaddr.sin_family = AF_INET;
   sockaddr.sin_addr.s_addr = INADDR_ANY;
   sockaddr.sin_port = htons(9999);
 
+  int enable = 1;
+
+  if (setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+    throw socket_exception("SO_REUSEADDR not available.");
+
   if (bind(server, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) < 0)
     throw socket_exception("Failed to bind to port 9999.");
+
   if (listen(server, 10) < 0)
     throw socket_exception("Failed to listen on socket.");
+}
 
+int s_socket::serve(){
+  int clients = 0;
+  while (true) {
+    int client = accept_connection();
+    std::thread t(&s_socket::handle_connection, this, client);
+
+    t.detach();
+
+    if (clients++ > 3) break;
+  }
+
+  return clients;
+}
+
+void s_socket::wait(int client_socket) {
+  receive(client_socket);
+}
+
+int s_socket::accept_connection() {
   auto addrlen = sizeof(sockaddr);
-  client = accept(server, (struct sockaddr *)&sockaddr, (socklen_t *)&addrlen);
+  int client =
+      accept(server, (struct sockaddr *)&sockaddr, (socklen_t *)&addrlen);
 
   if (client < 0) {
     throw socket_exception("Failed to grab connection.");
   }
+
+  return client;
 }
 
-std::string handler::receive() {
+std::string s_socket::receive(int client_socket) {
   char buffer[256];
   int n = 1;
   char *end = nullptr;
-  std::string headers_data = "";
+  std::string headers_data, request;
+
+  unsigned short int i = 0;
+
+  size_t pos = 0;
+  const char *delimiter = "\r\n";
+  int delimiter_len = strlen(delimiter);
 
   while (n > 0) {
-    n = read(client, buffer, 255);
+    n = read(client_socket, buffer, 255);
 
     if (n < 0)
       throw socket_exception("Failed reading from socket.");
@@ -65,18 +100,19 @@ std::string handler::receive() {
       throw socket_exception("peer shutted down");
 
     headers_data += std::string(buffer, n);
-
     if (strcontains(headers_data, "\r\n\r\n") || n < 255) {
       break;
     }
   }
 
-  size_t pos = 0;
-  const char *delimiter = "\r\n";
-  int delimiter_len = strlen(delimiter);
-
   while ((pos = headers_data.find(delimiter)) != std::string::npos) {
     std::string line = headers_data.substr(0, pos);
+
+    if (i == 0) {
+      request = line;
+      i++;
+    }
+
     headers_data.erase(0, pos + delimiter_len);
 
     size_t colon_pos = line.find(":");
@@ -87,18 +123,18 @@ std::string handler::receive() {
     }
   }
 
-  return "";
+  return request;
 }
 
-bool handler::submit(const std::string &data) {
+bool s_socket::submit(int client_socket, const std::string &data) {
   std::string response =
       std::format("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n {}",
                   data.length(), data.c_str());
 
-  return send(client, response.c_str(), response.length(), 0) > 0;
+  return send(client_socket, response.c_str(), response.length(), 0) > 0;
 }
 
-bool handler::send_html(const std::string &path) {
+bool s_socket::send_html(int client_socket, const std::string &path) {
   std::string response = "";
   std::ifstream file(path);
 
@@ -107,25 +143,25 @@ bool handler::send_html(const std::string &path) {
 
     while (!file.eof()) {
       std::getline(file, buff);
-      response.append(buff + '\n');
+      response.append(buff);
     }
   }
-  return this->submit(response);
+  return this->submit(client_socket, response);
 }
 
-bool handler::halt() {
+bool s_socket::halt() {
   // Close the connections
-  shutdown(client, SHUT_WR);
   shutdown(server, SHUT_WR);
 
-  int cc = close(client);
-  int cs = close(server);
-
-  sleep(2);
-
-  return cc < 0 && cs < 0;
+  return close(server) == 0;
 }
 
-bool handler::is_active() {
-  return alive;
+bool s_socket::is_active() { return alive; }
+
+void s_socket::handle_connection(int client_socket) {
+  wait(client_socket);
+  send_html(client_socket, "index.html");
+
+  shutdown(client_socket, SHUT_WR);
+  close(client_socket);
 }
