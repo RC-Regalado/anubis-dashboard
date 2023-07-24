@@ -22,8 +22,8 @@ s_socket::s_socket() {
     start();
     alive = true;
   } catch (socket_exception se) {
-    throw se;
     alive = false;
+    throw;
   }
 }
 

@@ -1,4 +1,6 @@
+#include "socket/client.hpp"
 #include "socket/exceptions.hpp"
+#include "socket/pool.hpp"
 #include "socket/socket.hpp"
 #include <cstdlib>
 #include <iostream>
@@ -143,8 +145,13 @@ int main() {
     if (!server.is_active())
       return EXIT_FAILURE;
 
+    thread_pool pool(4);
+
     cout << "Listening ---" << endl;
-    cout << "Clients: " << server.serve() << endl;
+    while (true) {
+      int client_fd = server.accept_connection();
+      pool.addTask(client(client_fd).handle_connection);
+    }
 
     if (server.halt()) {
       cout << "Server stop gracefully." << endl;
