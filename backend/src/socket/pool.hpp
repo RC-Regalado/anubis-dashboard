@@ -7,17 +7,18 @@
 #include <condition_variable>
 #include <functional>
 
+#include "client.hpp"
+
 class thread_pool {
     std::vector<std::thread> threads;
-    std::queue<std::function<void()>> tasks;
-    std::mutex queueMutex;
+    std::queue<std::shared_ptr<client>> clients;
+    std::mutex clientsMutex;
     std::condition_variable condition;
     bool stop;
 
 public:
     thread_pool(size_t numThreads); 
-    template<typename F>
-    void addTask(F&& task); 
+    void addClient(std::shared_ptr<client> client) ;
     ~thread_pool();
 };
 

@@ -1,41 +1,42 @@
 #include "pool.hpp"
 #include <cstddef>
+#include <functional>
+#include <memory>
 
 thread_pool::thread_pool(size_t numThreads) : stop(false) {
   for (size_t i = 0; i < numThreads; ++i) {
     threads.emplace_back([this] {
       while (true) {
-        std::function<void()> task;
-
+        std::shared_ptr<client> _client;
         {
-          std::unique_lock<std::mutex> lock(queueMutex);
-          condition.wait(lock, [this] { return stop || !tasks.empty(); });
+          std::unique_lock<std::mutex> lock(clientsMutex);
+          condition.wait(lock, [this] { return stop || !clients.empty(); });
 
-          if (stop && tasks.empty()) {
+          if (stop && clients.empty()) {
             return;
           }
 
-          task = std::move(tasks.front());
-          tasks.pop();
+          _client = clients.front();
+          _client->handle_connection();
+          clients.pop();
         }
-
-        task();
       }
     });
   }
 }
 
-template <typename F> void thread_pool::addTask(F &&task) {
-  {
-    std::unique_lock<std::mutex> lock(queueMutex);
-    tasks.emplace(std::forward<F>(task));
-  }
-  condition.notify_one();
+void thread_pool::addClient(std::shared_ptr<client> client) {
+        {
+            std::unique_lock<std::mutex> lock(clientsMutex);
+            clients.emplace(client);
+        }
+        condition.notify_one();
 }
+
 
 thread_pool::~thread_pool() {
   {
-    std::unique_lock<std::mutex> lock(queueMutex);
+    std::unique_lock<std::mutex> lock(clientsMutex);
     stop = true;
   }
   condition.notify_all();

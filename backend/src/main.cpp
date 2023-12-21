@@ -1,6 +1,5 @@
 #include "socket/client.hpp"
 #include "socket/exceptions.hpp"
-#include "socket/pool.hpp"
 #include "socket/socket.hpp"
 #include <cstdlib>
 #include <iostream>
@@ -138,6 +137,10 @@ void curses() {
   cout << (ss == nullptr ? R"({"name": "Hello"})" : ss);
 }
 
+void handle_connection(){
+
+}
+
 // Entry Point {{{
 int main() {
   try {
@@ -145,13 +148,8 @@ int main() {
     if (!server.is_active())
       return EXIT_FAILURE;
 
-    thread_pool pool(4);
-
     cout << "Listening ---" << endl;
-    while (true) {
-      int client_fd = server.accept_connection();
-      pool.addTask(client(client_fd).handle_connection);
-    }
+    server.serve();
 
     if (server.halt()) {
       cout << "Server stop gracefully." << endl;

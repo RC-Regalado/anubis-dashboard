@@ -23,14 +23,7 @@ public:
   int serve();
 
   bool is_active();
-  bool submit(int client_socket, const std::string &data);
-  bool send_html(int client_socket, const std::string &path);
-  std::string receive(int client_socket);
-
   bool halt();
-
-private:
-  void handle_connection(int client_socket);
 };
 
 #endif
