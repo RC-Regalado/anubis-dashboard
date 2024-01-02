@@ -2,7 +2,6 @@
 #include "exceptions.hpp"
 #include "utils.hpp"
 
-#include <iostream>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -11,11 +10,14 @@
 #include <iterator>
 #include <netinet/in.h> // For sockaddr_in
 #include <ostream>
-#include <string>
 #include <sys/socket.h> // For socket functions
 #include <sys/types.h>
 #include <thread>
 #include <unistd.h> // For read
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <vector>
 
 client::client(int socketfd): socketfd(socketfd){
 
@@ -55,28 +57,34 @@ std::string client::receive() {
     }
   }
 
-  std::cout << headers_data << std::endl;
+    std::istringstream ss(headers_data);
+    std::string line;
+    std::string smethod, path, httpVersion;
 
-  while ((pos = headers_data.find(delimiter)) != std::string::npos) {
-    std::string line = headers_data.substr(0, pos);
+    ss >> method >> path >> httpVersion;
 
-    if (i == 0) {
-      request = line;
-      i++;
+    this->method = smethod;
+    this->uri = path;
+
+    // Almacenar cada línea en un vector
+    std::vector<std::string> lines;
+    while (std::getline(ss, line)) {
+        lines.push_back(line);
     }
 
-    headers_data.erase(0, pos + delimiter_len);
+    lines
 
-    size_t colon_pos = line.find(":");
-    if (colon_pos != std::string::npos) {
-      std::string key = line.substr(0, colon_pos);
-      std::string value = line.substr(colon_pos + 2);
-      headers[key] = value;
-
-      std::cout << key << " - " << value << std::endl;
+    // Buscar la línea con el método y la ruta
+    for (const std::string& line : lines) {
+        std::istringstream lineStream(line);
+        lineStream >> method >> path;
+        // if (!method.empty() && !path.empty()) {
+        //     // Se encontró la línea con el método y la ruta
+        //     return std::make_pair(method, path);
+        // }
     }
-  }
 
+ 
   std::cout << "End Request" << std::endl;
   return request;
 }
@@ -103,6 +111,5 @@ bool client::send_html(const std::string &path) {
   }
   return this->submit(response);
 }
-
 
 
