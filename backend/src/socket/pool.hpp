@@ -1,11 +1,9 @@
 #ifndef __POOL_HPP
 #define __POOL_HPP
-#include <iostream>
 #include <queue>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-#include <functional>
 
 #include "client.hpp"
 

@@ -1,8 +1,8 @@
 #ifndef __CLIENT_HPP_
 #define __CLIENT_HPP_
+#include <map>
 #include <netinet/in.h>
 #include <string>
-#include <map>
 
 class client {
   int socketfd;
@@ -12,11 +12,14 @@ class client {
   std::map<std::string, std::string> headers;
   sockaddr_in sockaddr;
 
+  std::string boundary;
+
 public:
-  client(int socketfd);
+  client(int socketfd, char *wwwroot);
 
   void handle_connection();
   bool submit(const std::string &data);
+  void parse_headers(std::stringstream &stream);
   bool send_html(const std::string &path);
   std::string receive();
 };

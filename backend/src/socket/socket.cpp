@@ -1,21 +1,13 @@
-#include <cstddef>
-#include <cstdlib>
-#include <cstring>
-#include <format>
-#include <fstream>
+#include <memory>
 #include <netinet/in.h> // For sockaddr_in
-#include <string>
 #include <sys/socket.h> // For socket functions
 #include <sys/types.h>
-#include <thread>
 #include <unistd.h> // For read
-#include <memory>
 
-#include "exceptions.hpp"
-#include "socket.hpp"
-#include "utils.hpp"
 #include "client.hpp"
+#include "exceptions.hpp"
 #include "pool.hpp"
+#include "socket.hpp"
 
 s_socket::s_socket() {
   try {
@@ -49,13 +41,14 @@ void s_socket::start() {
     throw socket_exception("Failed to listen on socket.");
 }
 
-int s_socket::serve(){
+int s_socket::serve() {
   int clients = 0;
   thread_pool pool(4);
 
   while (true) {
     int client_fd = accept_connection();
-    std::shared_ptr<client> cl = std::make_shared<client>(client_fd);
+    std::shared_ptr<client> cl =
+        std::make_shared<client>(client_fd, (char *)"");
     pool.addClient(cl);
   }
 
@@ -82,4 +75,3 @@ bool s_socket::halt() {
 }
 
 bool s_socket::is_active() { return alive; }
-

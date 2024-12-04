@@ -5,88 +5,78 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <format>
 #include <fstream>
-#include <iterator>
+#include <iostream>
 #include <netinet/in.h> // For sockaddr_in
 #include <ostream>
+#include <sstream>
+#include <stdio.h>
+#include <string>
 #include <sys/socket.h> // For socket functions
 #include <sys/types.h>
-#include <thread>
 #include <unistd.h> // For read
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <vector>
 
-client::client(int socketfd): socketfd(socketfd){
-
-}
+client::client(int socketfd, char *wwwroot) : socketfd(socketfd) {}
 
 void client::handle_connection() {
   receive();
-  send_html("index.html");
+
+  send_html(uri == "/" ? "/index.html" : uri);
 
   shutdown(socketfd, SHUT_WR);
   close(socketfd);
 }
 
+void client::parse_headers(std::stringstream &sstream) {
+  std::string line;
+  std::string httpVersion;
+  std::string key, value;
+
+  sstream >> method >> uri >> httpVersion;
+
+  headers["version"] = httpVersion;
+
+  while (std::getline(sstream, line)) {
+    auto pos = line.find(':');
+
+    if (pos != std::string::npos) {
+      key = line.substr(0, pos);
+      value = line.substr(pos + 2, line.length() - pos);
+    }
+
+    debug(key);
+    debug(value);
+
+    headers[key] = value;
+  }
+}
+
 std::string client::receive() {
   char buffer[256];
-  int n = 1;
-  char *end = nullptr;
-  std::string headers_data, request;
-
-  unsigned short int i = 0;
-
-  size_t pos = 0;
+  std::string headers_data;
+  std::stringstream request;
+  size_t flag = 0;
   const char *delimiter = "\r\n";
-  int delimiter_len = strlen(delimiter);
+  FILE *file = fdopen(socketfd, "r+");
 
-  while (n > 0) {
-    n = read(socketfd, buffer, 255);
-
-    if (n < 0)
-      throw socket_exception("Failed reading from socket.");
-    if (n == 0)
-      throw socket_exception("peer shutted down");
-
-    headers_data += std::string(buffer, n);
-    if (strcontains(headers_data, "\r\n\r\n") || n < 255) {
-      break;
-    }
+  if (file == nullptr) {
+    std::cerr << "Error al vincular socket con FILE*" << std::endl;
+    close(socketfd);
   }
 
-    std::istringstream ss(headers_data);
-    std::string line;
-    std::string smethod, path, httpVersion;
+  while (flag <= 0) {
+    if (fgets(buffer, sizeof(buffer), file) == nullptr)
+      throw socket_exception("Failed reading from socket.");
 
-    ss >> method >> path >> httpVersion;
+    request << buffer;
+    flag = strspn(buffer, "\r\n");
+  }
 
-    this->method = smethod;
-    this->uri = path;
+  this->parse_headers(request);
 
-    // Almacenar cada línea en un vector
-    std::vector<std::string> lines;
-    while (std::getline(ss, line)) {
-        lines.push_back(line);
-    }
-
-    lines
-
-    // Buscar la línea con el método y la ruta
-    for (const std::string& line : lines) {
-        std::istringstream lineStream(line);
-        lineStream >> method >> path;
-        // if (!method.empty() && !path.empty()) {
-        //     // Se encontró la línea con el método y la ruta
-        //     return std::make_pair(method, path);
-        // }
-    }
-
- 
-  std::cout << "End Request" << std::endl;
-  return request;
+  return request.str();
 }
 
 bool client::submit(const std::string &data) {
@@ -99,7 +89,9 @@ bool client::submit(const std::string &data) {
 
 bool client::send_html(const std::string &path) {
   std::string response = "";
-  std::ifstream file(path);
+  std::ifstream file(std::filesystem::current_path().string() + path);
+
+  debug(path);
 
   if (file.is_open()) {
     std::string buff;
@@ -108,8 +100,8 @@ bool client::send_html(const std::string &path) {
       std::getline(file, buff);
       response.append(buff);
     }
+  } else {
+    debug("non");
   }
   return this->submit(response);
 }
-
-

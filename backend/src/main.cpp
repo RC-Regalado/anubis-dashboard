@@ -1,4 +1,3 @@
-#include "socket/client.hpp"
 #include "socket/exceptions.hpp"
 #include "socket/socket.hpp"
 #include <cstdlib>
@@ -6,16 +5,10 @@
 #include <memory>
 #include <regex>
 #include <string>
+#include <fstream>
 using namespace std;
 
-#include <cgicc/Cgicc.h>
-#include <cgicc/HTTPHTMLHeader.h>
-
-using namespace cgicc;
-
-#include "download.hpp"
 #include "files.hpp"
-#include "notes.hpp"
 
 string sync_path;
 
@@ -67,69 +60,13 @@ void music() {
 // }}}
 
 bool read_file(const string &key) {
-  Cgicc cgi;
-  auto file = cgi.getFile("file");
-
-  string method = getenv("REQUEST_METHOD");
-
-  if (file != cgi.getFiles().end() && method == "POST") {
-    cout << HTTPContentHeader(file->getDataType());
-
-    auto handler = media(sync_path, file->getFilename());
-    handler.save(file->getData());
-
-    return true;
-  }
   return false;
 }
 
 void file_handler() {
-  Cgicc cgi;
-  auto hash = cgi.getElement("hash");
-  if (hash != cgi.getElements().end()) {
-    cout << media::download(sync_path, hash->getValue());
-    return;
-  }
-
-  auto file = cgi.getFile("file");
-
-  string method = getenv("REQUEST_METHOD");
-
-  if (file != cgi.getFiles().end() && method == "POST") {
-    cout << HTTPContentHeader(file->getDataType());
-
-    auto handler = media(sync_path, file->getFilename());
-    handler.save(file->getData());
-
-    return;
-  }
-  cout << media(sync_path).to_json();
 }
 
 void notes_handler() {
-  Cgicc cgi;
-  auto hash = cgi.getElement("hash");
-  if (hash != cgi.getElements().end()) {
-    cout << notes::download(sync_path, hash->getValue());
-    return;
-  }
-  auto file = cgi.getElement("name");
-
-  char *tmp = getenv("REQUEST_METHOD");
-  string method = tmp == nullptr ? "GET" : tmp;
-
-  if (file != cgi.getElements().end() && method == "POST") {
-    cout << response(headers::JSON);
-
-    auto handler = notes(sync_path, file->getValue());
-    handler.save(cgi.getElement("value")->getValue());
-
-    return;
-  }
-
-  // if (read_file("notes")) return;
-
-  cout << notes(sync_path).to_json();
 }
 
 void curses() {
@@ -187,21 +124,12 @@ int main_bakup() {
   } else if (uri == "/curses") {
     curses();
   } else if (uri == "/download") {
-    Cgicc cgi;
-
-    auto url = cgi.getElement("url");
-    auto name = cgi.getElement("name");
-    auto hide = cgi.queryCheckbox("hide");
-
-    auto *downloader = new download(name->getValue(), url->getValue(), hide);
-    downloader->run();
   } else if (uri == "/notes") {
     notes_handler();
   } else {
     cout << response(headers::HTML);
 
-    unique_ptr<ifstream> reader =
-        make_unique<ifstream>(ifstream("lib/index.html"));
+    unique_ptr<ifstream> reader = make_unique<ifstream>(ifstream("lib/index.html"));
 
     string buffer;
     while (!reader->eof()) {

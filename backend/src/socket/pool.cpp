@@ -1,6 +1,5 @@
 #include "pool.hpp"
 #include <cstddef>
-#include <functional>
 #include <memory>
 
 thread_pool::thread_pool(size_t numThreads) : stop(false) {
