@@ -1,6 +1,6 @@
 #include "client.hpp"
+#include "../tools/utils.hpp"
 #include "exceptions.hpp"
-#include "utils.hpp"
 
 #include <cstddef>
 #include <cstdlib>

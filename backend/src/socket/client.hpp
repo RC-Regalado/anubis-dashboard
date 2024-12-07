@@ -1,10 +1,11 @@
 #ifndef __CLIENT_HPP_
 #define __CLIENT_HPP_
 #include <map>
+#include <memory>
 #include <netinet/in.h>
 #include <string>
 
-class client {
+class client : public std::enable_shared_from_this<client> {
   int socketfd;
   std::string method;
   std::string uri;

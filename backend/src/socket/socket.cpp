@@ -49,7 +49,7 @@ int s_socket::serve() {
     int client_fd = accept_connection();
     std::shared_ptr<client> cl =
         std::make_shared<client>(client_fd, (char *)"");
-    pool.addClient(cl);
+    //    pool.add_task(cl);
   }
 
   return clients;
