@@ -1,35 +1,34 @@
 <template>
-  <section class="home">
-    <div class="home__header">
+  <section class="view-shell">
+    <div class="view-shell__header">
       <div>
-        <p class="home__eyebrow">Workspace</p>
-        <h1 class="home__title">Notes</h1>
+        <p class="view-shell__eyebrow">Library</p>
+        <h1 class="view-shell__title">Files</h1>
       </div>
-      <p class="home__subtitle">Capture reminders, meeting notes, and drafts with local persistence.</p>
     </div>
-    <Notes />
+    <Files />
   </section>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import Notes from "@/components/utilities/Notes.vue";
+import { defineComponent } from 'vue'
+import Files from '@/components/Files.vue'
 
 export default defineComponent({
-  name: "UtilsView",
+  name: 'FilesView',
   components: {
-    Notes,
+    Files,
   },
-});
+})
 </script>
 
 <style scoped lang="scss">
-.home {
+.view-shell {
   display: grid;
   gap: 1.5rem;
 }
 
-.home__header {
+.view-shell__header {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
@@ -37,7 +36,7 @@ export default defineComponent({
   flex-wrap: wrap;
 }
 
-.home__eyebrow {
+.view-shell__eyebrow {
   margin: 0 0 0.35rem;
   color: var(--accent);
   font-size: 0.78rem;
@@ -46,12 +45,12 @@ export default defineComponent({
   text-transform: uppercase;
 }
 
-.home__title {
+.view-shell__title {
   margin: 0;
   font-size: clamp(2rem, 4vw, 2.8rem);
 }
 
-.home__subtitle {
+.view-shell__subtitle {
   max-width: 36rem;
   margin: 0;
   color: var(--ink-soft);

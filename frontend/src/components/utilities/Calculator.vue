@@ -7,29 +7,40 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from "vue";
+
+function evaluate(expression: string): string {
+  return Function(`"use strict"; return (${expression})`)().toString();
+}
+
+export default defineComponent({
+  name: "CalculatorView",
   data() {
     return {
       result: "0",
-      buttons: ["C", "(", ")", "/", "7", "8", "9", "*", "4", "5", "6", "-", "1", "2", "3", "+", "±", "0", ".", "="],
+      buttons: ["C", "(", ")", "/", "7", "8", "9", "*", "4", "5", "6", "-", "1", "2", "3", "+", "±", "0", ".", "="] as string[],
     };
   },
   methods: {
-    handleClick(button) {
+    handleClick(button: string) {
       switch (button) {
         case "C":
           this.result = "0";
           break;
         case "=":
           try {
-            this.result = eval(this.result);
-          } catch (e) {
+            this.result = evaluate(this.result);
+          } catch {
             this.result = "Error";
           }
           break;
         case "±":
-          this.result = eval(-1 * this.result);
+          try {
+            this.result = evaluate(`${Number(this.result) * -1}`);
+          } catch {
+            this.result = "Error";
+          }
           break;
         default:
           if (this.result === "0" || this.result === "Error") {
@@ -40,7 +51,7 @@ export default {
       }
     },
   },
-};
+});
 </script>
 
 <style>
@@ -94,4 +105,3 @@ button:active {
   transform: translateY(2px);
 }
 </style>
-

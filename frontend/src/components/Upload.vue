@@ -1,73 +1,82 @@
 <template>
-  <b-container>
-    <b-row>
-      <b-col>
-        <p>
-          Archivos a subir
-          <b-icon-upload></b-icon-upload>
-        </p>
-      </b-col>
-      <b-col cols="5" class="mb-0">
-        <b-img class="active w-100" :src="image" v-if="loaded" />
-      </b-col>
-    </b-row>
-    <b-row>
-      <input
-        type="file"
-        ref="fileInput"
-        v-on:click="total = 0"
-        @change="onFilePicked"
-      />
-      <b-btn class="btn btn-info" @click="send"> Enviar </b-btn>
-    </b-row>
-    <b-row>
-      <b-col sm="12" style="padding-top: 1em">
-        <b-progress max="100" class="mb-3" :value="total" />
-      </b-col>
-    </b-row>
-  </b-container>
+  <section class="card shadow-sm">
+    <div class="card-body">
+      <div class="row g-4 align-items-start">
+        <div class="col-lg">
+          <p class="h5">Archivos a subir</p>
+          <div class="d-flex gap-3 align-items-center">
+            <input
+              type="file"
+              ref="fileInput"
+              class="form-control"
+              @click="total = 0"
+              @change="onFilePicked"
+            />
+            <button class="btn btn-info text-white" @click="send">Enviar</button>
+          </div>
+          <div class="progress mt-3" role="progressbar" aria-label="Upload progress" :aria-valuenow="total" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" :style="{ width: `${total}%` }">{{ total }}%</div>
+          </div>
+        </div>
+        <div v-if="loaded" class="col-lg-5">
+          <img class="img-fluid rounded border" :src="image" alt="Preview" />
+        </div>
+      </div>
+    </div>
+  </section>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from "vue";
 import api from "@/api";
 
-export default {
+export default defineComponent({
   name: "UploadView",
   data: () => ({
     image: "",
     loaded: false,
-    file: "",
+    file: null as File | null,
     total: 0,
   }),
   methods: {
-    send() {
-      let form = new FormData();
+    async send() {
+      if (!this.file) {
+        return;
+      }
+
+      const form = new FormData();
       form.append("file", this.file);
 
-      const onload = (e) => {
-        this.total = Math.round((100 * e.loaded) / e.total);
-        console.debug(e.loaded);
-        console.debug();
+      const onload = (event: { loaded: number; total?: number }) => {
+        const total = event.total ?? event.loaded;
+        this.total = Math.round((100 * event.loaded) / total);
       };
-      api.upload(form, onload).then((response) => {
+
+      const response = await api.upload(form, onload);
+
+      if (response) {
         console.debug(response.data);
-      });
+      }
     },
-    onFilePicked(event) {
-      const file = event.target.files[0];
+    onFilePicked(event: Event) {
+      const target = event.target as HTMLInputElement;
+      const file = target.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
       this.file = file;
 
       const fileReader = new FileReader();
       fileReader.onload = () => {
-        this.image = fileReader.result;
+        this.image = String(fileReader.result ?? "");
         this.loaded = true;
-        console.debug(this.image);
       };
       fileReader.readAsDataURL(file);
-      // this.image = files[0];
     },
   },
-};
+});
 </script>
 
 <style scoped></style>

@@ -1,17 +1,17 @@
 <template>
-  <b-container class="home">
-    <files></files>
-  </b-container>
+  <div class="home">
+    <Files />
+  </div>
 </template>
 
-<script>
-// @ is an alias to /src
-import Files from "@/components/Files";
+<script lang="ts">
+import { defineComponent } from "vue";
+import Files from "@/components/Files.vue";
 
-export default {
+export default defineComponent({
   name: "MainLayout",
   components: {
     Files,
   },
-};
+});
 </script>
