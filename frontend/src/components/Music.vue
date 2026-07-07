@@ -35,66 +35,67 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import types from "@/store/types";
-import { Song } from "@/api";
-import { RootState } from "@/store";
+import { defineComponent } from 'vue'
+import api from '@/api'
+import type { Song } from '@/api'
 
 export default defineComponent({
-  name: "MusicView",
+  name: 'MusicView',
   data: () => ({
     index: -1,
     currentSong: null as Song | null,
+    songs: [] as Song[],
   }),
   async mounted() {
-    await this.$store.dispatch(types.requestMusic);
+    const songs = await api.requestMusic()
+
+    if (songs) {
+      this.songs = songs
+    }
   },
   computed: {
-    songs(): Song[] {
-      return (this.$store.state as RootState).app.songs;
-    },
     currentSongSource(): string {
       if (!this.currentSong) {
-        return "";
+        return ''
       }
 
-      return `${this.currentSong.path}${this.currentSong.name}`;
+      return `${this.currentSong.path}${this.currentSong.name}`
     },
   },
   methods: {
     onEnd() {
       if (!this.songs.length) {
-        return;
+        return
       }
 
       if (this.index >= this.songs.length - 1) {
-        this.index = 0;
+        this.index = 0
       } else {
-        this.index += 1;
+        this.index += 1
       }
 
-      this.currentSong = this.songs[this.index];
-      const player = this.$refs.player as HTMLAudioElement | undefined;
-      player?.load();
+      this.currentSong = this.songs[this.index] ?? null
+      const player = this.$refs.player as HTMLAudioElement | undefined
+      player?.load()
     },
     play(song: Song) {
-      this.currentSong = song;
-      this.index = this.songs.indexOf(song);
+      this.currentSong = song
+      this.index = this.songs.indexOf(song)
     },
     onCanPlay() {
-      const player = this.$refs.player as HTMLAudioElement | undefined;
-      player?.play();
+      const player = this.$refs.player as HTMLAudioElement | undefined
+      player?.play()
     },
   },
   watch: {
     currentSong() {
       if (this.index >= 0) {
-        const player = this.$refs.player as HTMLAudioElement | undefined;
-        player?.play();
+        const player = this.$refs.player as HTMLAudioElement | undefined
+        player?.play()
       }
     },
   },
-});
+})
 </script>
 
 <style scoped>

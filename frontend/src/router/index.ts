@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import DashboardView from '@/views/DashboardView.vue'
+import FinanceDashboardView from '@/views/FinanceDashboardView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'Dashboard',
-      component: DashboardView,
+      component: FinanceDashboardView,
     },
     {
       path: '/file',
@@ -18,6 +18,11 @@ const router = createRouter({
       path: '/notes',
       name: 'Notes',
       component: () => import('@/views/NotesView.vue'),
+    },
+    {
+      path: '/utils',
+      name: 'Utils',
+      component: () => import('@/views/UtilsView.vue'),
     },
     {
       path: '/upload',

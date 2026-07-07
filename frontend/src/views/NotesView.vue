@@ -210,7 +210,7 @@ export default defineComponent({
       const response = await api.saveNote(draft.title.trim(), draft.body.trim())
 
       if (response) {
-        console.debug(response.data)
+        console.debug('note synced')
       }
     }
 

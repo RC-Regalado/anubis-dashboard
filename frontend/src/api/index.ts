@@ -16,6 +16,11 @@ export interface Course {
   name: string
 }
 
+export interface FinanceSyncPayload {
+  syncedAt: string
+  data: unknown
+}
+
 const isLocalHost = (hostname: string): boolean =>
   hostname === 'localhost' || hostname === '127.0.0.1'
 
@@ -66,6 +71,56 @@ async function requestFile(hash: string): Promise<unknown | false> {
   return await response.blob()
 }
 
+async function requestMusic(): Promise<Song[] | false> {
+  const path = import.meta.env.VITE_API_MUSIC_URL?.trim() || '/music'
+  const url = toApiUrl(path)
+
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    return false
+  }
+
+  const payload = await response.json().catch(() => [])
+
+  return payload.map((value: Record<string, unknown>) => ({
+    name: String(value?.name || ''),
+    path: String(value?.path || ''),
+    mime: value?.mime ? String(value.mime) : undefined,
+  }))
+}
+
+async function upload(
+  data: FormData,
+  onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void,
+): Promise<boolean> {
+  const path = import.meta.env.VITE_API_FILES_URL?.trim() || '/file'
+  const url = toApiUrl(path)
+
+  return await new Promise((resolve) => {
+    const request = new XMLHttpRequest()
+
+    request.open('POST', url)
+
+    request.upload.onprogress = (event) => {
+      onUploadProgress?.({
+        loaded: event.loaded,
+        total: event.lengthComputable ? event.total : undefined,
+      })
+    }
+
+    request.onload = () => {
+      resolve(request.status >= 200 && request.status < 300)
+    }
+
+    request.onerror = () => {
+      resolve(false)
+    }
+
+    request.send(data)
+  })
+}
+
 async function screenOff(): Promise<boolean> {
   const path = import.meta.env.VITE_API_SCREEN_URL?.trim() || '/screen'
   const url = toApiUrl(path)
@@ -102,6 +157,26 @@ async function saveNote(name: string, value: string): Promise<boolean> {
   }
 
   return true
+}
+
+async function syncFinanceData(data: unknown): Promise<boolean> {
+  const path = import.meta.env.VITE_API_FINANCE_SYNC_URL?.trim() || '/finance/sync'
+  const url = toApiUrl(path)
+
+  const payload: FinanceSyncPayload = {
+    syncedAt: new Date().toISOString(),
+    data,
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  return response.ok
 }
 /*
 async function requestCurses(): Promise<AxiosResponse<string[]> | false> {
@@ -148,7 +223,10 @@ axios.interceptors.request.use((config: InternalAxiosRequestConfig) => config)
 const api = {
   requestFiles,
   requestFile,
+  requestMusic,
+  upload,
   saveNote,
+  syncFinanceData,
   screenOff,
 }
 

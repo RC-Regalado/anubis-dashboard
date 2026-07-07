@@ -55,7 +55,7 @@ export default defineComponent({
       const response = await api.upload(form, onload);
 
       if (response) {
-        console.debug(response.data);
+        console.debug('upload complete')
       }
     },
     onFilePicked(event: Event) {
@@ -76,7 +76,7 @@ export default defineComponent({
       fileReader.readAsDataURL(file);
     },
   },
-});
+})
 </script>
 
 <style scoped></style>

@@ -16,8 +16,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import types from '@/store/types'
-import api, { FileItem } from '@/api'
+import api from '@/api'
+import type { FileItem } from '@/api'
 
 import download from 'downloadjs'
 
@@ -41,7 +41,7 @@ export default defineComponent({
         return
       }
 
-      download(resp, file.name)
+      download(resp as Blob, file.name)
     },
     drop(hash: string) {
       console.debug(hash)

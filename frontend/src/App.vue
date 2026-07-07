@@ -9,12 +9,11 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import types from '@/store/types'
 import NavBar from '@/components/NavBar.vue'
+
 export default defineComponent({
   name: 'main-entry',
   components: { NavBar },
-  async mounted() {},
 })
 </script>
 <style lang="scss">

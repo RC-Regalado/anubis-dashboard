@@ -1,59 +1,126 @@
 <template>
-  <section class="home">
-    <div class="home__header">
-      <div>
-        <p class="home__eyebrow">Workspace</p>
-        <h1 class="home__title">Notes</h1>
+  <UtilsLayout>
+    <template #actions>
+      <div class="actions">
+        <button class="btn btn-primary" type="button" @click="openModal('day')">Registrar dia</button>
+        <button class="btn btn-outline-secondary" type="button" @click="openModal('workout')">
+          Entrenamiento
+        </button>
+        <button class="btn btn-outline-secondary" type="button" @click="openModal('meal')">
+          Comida
+        </button>
+        <button class="btn btn-outline-secondary" type="button" @click="openModal('habit')">
+          Habito
+        </button>
       </div>
-      <p class="home__subtitle">Capture reminders, meeting notes, and drafts with local persistence.</p>
-    </div>
-    <Notes />
-  </section>
+    </template>
+
+    <UtilsSummary />
+
+    <section class="utils-grid utils-grid--primary">
+      <PhysiologyPanel />
+      <NutritionSleepPanel />
+    </section>
+
+    <section class="utils-grid utils-grid--secondary">
+      <TrainingPerformance />
+      <HabitTracker />
+      <SubjectiveState />
+      <NeatActivity />
+    </section>
+
+    <PomodoroNotifier />
+
+    <RelationshipInsights />
+
+    <BaseModal v-model="modalOpen" :title="modalTitle">
+      <DailyLogForm v-if="activeModal === 'day'" @saved="closeModal" />
+      <WorkoutForm v-if="activeModal === 'workout'" @saved="closeModal" />
+      <MealForm v-if="activeModal === 'meal'" @saved="closeModal" />
+      <HabitForm v-if="activeModal === 'habit'" @saved="closeModal" />
+    </BaseModal>
+  </UtilsLayout>
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
-import Notes from "@/components/utilities/Notes.vue";
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
+import UtilsLayout from '@/components/utils/UtilsLayout.vue'
+import UtilsSummary from '@/components/utils/UtilsSummary.vue'
+import PhysiologyPanel from '@/components/utils/PhysiologyPanel.vue'
+import NutritionSleepPanel from '@/components/utils/NutritionSleepPanel.vue'
+import TrainingPerformance from '@/components/utils/TrainingPerformance.vue'
+import HabitTracker from '@/components/utils/HabitTracker.vue'
+import SubjectiveState from '@/components/utils/SubjectiveState.vue'
+import NeatActivity from '@/components/utils/NeatActivity.vue'
+import RelationshipInsights from '@/components/utils/RelationshipInsights.vue'
+import PomodoroNotifier from '@/components/utils/PomodoroNotifier.vue'
+import DailyLogForm from '@/components/utils/forms/DailyLogForm.vue'
+import WorkoutForm from '@/components/utils/forms/WorkoutForm.vue'
+import MealForm from '@/components/utils/forms/MealForm.vue'
+import HabitForm from '@/components/utils/forms/HabitForm.vue'
 
-export default defineComponent({
-  name: "UtilsView",
-  components: {
-    Notes,
-  },
-});
+type ModalType = 'day' | 'workout' | 'meal' | 'habit'
+
+const activeModal = ref<ModalType>('day')
+const modalOpen = ref(false)
+
+const modalTitle = computed(() => {
+  const labels: Record<ModalType, string> = {
+    day: 'Registro diario',
+    workout: 'Registro de entrenamiento',
+    meal: 'Registro de comida',
+    habit: 'Nuevo habito',
+  }
+
+  return labels[activeModal.value]
+})
+
+function openModal(type: ModalType) {
+  activeModal.value = type
+  modalOpen.value = true
+}
+
+function closeModal() {
+  modalOpen.value = false
+}
 </script>
 
 <style scoped lang="scss">
-.home {
-  display: grid;
-  gap: 1.5rem;
-}
-
-.home__header {
+.actions {
   display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-end;
   flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
-.home__eyebrow {
-  margin: 0 0 0.35rem;
-  color: var(--accent);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.utils-grid {
+  display: grid;
+  gap: 1rem;
 }
 
-.home__title {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 2.8rem);
+.utils-grid--primary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.home__subtitle {
-  max-width: 36rem;
-  margin: 0;
-  color: var(--ink-soft);
+.utils-grid--secondary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1280px) {
+  .utils-grid--secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .actions {
+    justify-content: flex-start;
+  }
+
+  .utils-grid--primary,
+  .utils-grid--secondary {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

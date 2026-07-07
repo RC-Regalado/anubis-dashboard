@@ -49,6 +49,7 @@ export default defineComponent({
         { to: '/', label: 'Dashboard', caption: '----' },
         { to: '/file', label: 'Files', caption: 'Documentos' },
         { to: '/notes', label: 'Notes', caption: 'Agenda' },
+        { to: '/utils', label: 'Utils', caption: 'Timer y Pomodoro' },
         { to: '/upload', label: 'Upload', caption: 'Subir archivo' },
         { to: '/music', label: 'Music', caption: 'Música' },
       ],
@@ -71,7 +72,7 @@ export default defineComponent({
       this.date = new Intl.DateTimeFormat('es-SV', {
         dateStyle: 'medium',
         timeStyle: 'short',
-      }).format(new Date().Now)
+      }).format(new Date())
     },
   },
 })
